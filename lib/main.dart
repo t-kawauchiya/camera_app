@@ -1,63 +1,69 @@
-import 'package:flutter/material.dart';
+import 'dart:io';
 
-void main() {
-  runApp(MyApp());
-}
+import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
+
+import 'FileController.dart';
+
+void main() => runApp(MyApp());
 
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      home: MyHomePage(title: 'Flutter Demo Home Page'),
+      home: MyHomePage(),
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
-  MyHomePage({Key? key, required this.title}) : super(key: key);
-  final String title;
   @override
   _MyHomePageState createState() => _MyHomePageState();
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      _counter++;
-    });
-  }
-
+  File? _image;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.title),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headline4,
-            ),
-          ],
+        appBar: AppBar(
+          title: Text('Image Picker Sample'),
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
-    );
+        body: Container(
+            child: Column(
+          children: [
+            _image == null
+                ? Text('No image selected.')
+                : Image.memory(_image!.readAsBytesSync()),
+            Row(children: [
+              FloatingActionButton(
+                  onPressed: () {
+                    _getImageFromDevice(ImageSource.camera);
+                  },
+                  child: Icon(Icons.add_a_photo)),
+              FloatingActionButton(
+                onPressed: () {
+                  _getImageFromDevice(ImageSource.gallery);
+                },
+                child: Icon(Icons.add_photo_alternate),
+              )
+            ])
+          ],
+        )));
+  }
+
+  final picker = ImagePicker();
+  final fileController = FileController();
+
+  Future _getImageFromDevice(ImageSource source) async {
+    var _imageFile = await picker.pickImage(source: source);
+    if (_imageFile == null) {
+      return;
+    }
+    var savedFile = await fileController.saveLocalImage(File(_imageFile.path));
+    setState(() {
+      _image = savedFile;
+    });
   }
 }
